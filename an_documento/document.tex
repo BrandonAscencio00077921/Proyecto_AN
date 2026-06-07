@@ -1,0 +1,191 @@
+\documentclass[conference]{IEEEtran}
+
+\usepackage{amsmath, amsfonts}
+\usepackage{graphicx}
+\usepackage{cite}
+\usepackage{hyperref}
+
+\title{Eliminación de Ruido en Imágenes mediante Filtrado en el Dominio de la Frecuencia usando la Transformada Rápida de Fourier}
+
+\author{
+	\IEEEauthorblockN{Brandon Ascencio, Gabriel Cortez, Xavier Morán y Mario Umaña}
+	\IEEEauthorblockA{
+		Universidad Centroamericana ``José Simeón Cañas''\\
+		Departamento de Matemática\\
+	}
+		\href{mailto:00077921@uca.edu.sv}{00077921@uca.edu.sv}
+}
+
+\begin{document}
+	
+	\maketitle
+	
+	\begin{abstract}
+		En este trabajo se estudia la aplicación de la Transformada Discreta de Fourier (DFT) en dos dimensiones para la eliminación de ruido en imágenes digitales. Se analiza el comportamiento de la imagen en el dominio de frecuencias, donde el ruido se manifiesta principalmente en componentes de alta frecuencia. Se implementa un filtro gaussiano paso-bajo que permite atenuar dichas frecuencias, logrando una mejora en la calidad de la imagen reconstruida. Se presentan resultados experimentales y análisis cuantitativos que evidencian el compromiso entre eliminación de ruido y preservación de detalles.
+	\end{abstract}
+	
+	\section{Introducción}
+	
+	El procesamiento digital de imágenes es una disciplina esencial en aplicaciones como visión por computador, procesamiento médico y sistemas de reconocimiento automático. Uno de los problemas más comunes es la presencia de ruido, el cual degrada la información contenida en la imagen.
+	
+	La Transformada de Fourier constituye una herramienta fundamental para el análisis de señales, ya que permite representar una imagen en términos de sus componentes frecuenciales. En este contexto, el filtrado en el dominio de la frecuencia permite separar el contenido útil del ruido, facilitando su eliminación.
+	
+	El objetivo de este trabajo es aplicar técnicas de filtrado basadas en la Transformada Rápida de Fourier (FFT) para eliminar ruido gaussiano en imágenes digitales, evaluando tanto su impacto visual como cuantitativo.
+	
+	\section{Marco Teórico}
+	
+	\subsection{Transformada Discreta de Fourier en 2D}
+	
+	Sea $f[m,n]$ una imagen discreta de tamaño $M \times N$. La DFT bidimensional está definida por:
+	
+	\begin{equation}
+		F[u,v] = \sum_{m=0}^{M-1} \sum_{n=0}^{N-1} f[m,n] e^{-j2\pi\left(\frac{um}{M} + \frac{vn}{N}\right)}
+	\end{equation}
+	
+	Esta transformación permite descomponer la imagen en una superposición de funciones sinusoidales de diferentes frecuencias.
+	
+	Las componentes de baja frecuencia representan la estructura global de la imagen, mientras que las altas frecuencias corresponden a detalles finos como bordes y ruido.
+	
+	\subsection{Transformada Inversa}
+	
+	La reconstrucción de la imagen se realiza mediante la transformada inversa:
+	
+	\begin{equation}
+		f[m,n] = \frac{1}{MN} \sum_{u=0}^{M-1} \sum_{v=0}^{N-1} F[u,v] e^{j2\pi\left(\frac{um}{M} + \frac{vn}{N}\right)}
+	\end{equation}
+	
+	\subsection{Fast Fourier Transform (FFT)}
+	
+	El cálculo directo de la DFT tiene complejidad $O(M^2N^2)$, lo cual es computacionalmente costoso. La FFT reduce esta complejidad a:
+	
+	\begin{equation}
+		O(MN \log(MN))
+	\end{equation}
+	
+	lo que permite aplicar estas técnicas en imágenes reales de tamaño considerable.
+	
+	\subsection{Ruido Gaussiano}
+	
+	El ruido en imágenes se modela frecuentemente como:
+	
+	\begin{equation}
+		\eta[m,n] \sim \mathcal{N}(0, \sigma^2)
+	\end{equation}
+	
+	dando lugar a una imagen degradada:
+	
+	\begin{equation}
+		f_{\text{ruido}}[m,n] = f[m,n] + \eta[m,n]
+	\end{equation}
+	
+	En el dominio de Fourier, el ruido blanco se distribuye uniformemente en todas las frecuencias.
+	
+	\subsection{Filtrado en el Dominio de la Frecuencia}
+	
+	El filtrado se define como:
+	
+	\begin{equation}
+		G[u,v] = H[u,v] \cdot F[u,v]
+	\end{equation}
+	
+	donde $H[u,v]$ es la función de transferencia del filtro.
+	
+	\subsection{Filtro Gaussiano}
+	
+	El filtro gaussiano paso-bajo se define como:
+	
+	\begin{equation}
+		H[u,v] = e^{- \frac{(u-u_0)^2 + (v-v_0)^2}{2\sigma^2}}
+	\end{equation}
+	
+	donde $(u_0, v_0)$ es el centro del espectro.
+	
+	Este filtro suaviza la imagen de forma progresiva, evitando discontinuidades abruptas.
+	
+	\subsection{Teorema de Convolución}
+	
+	Una propiedad fundamental es:
+	
+	\begin{equation}
+		g[m,n] = f[m,n] * h[m,n] \iff G[u,v] = F[u,v] \cdot H[u,v]
+	\end{equation}
+	
+	Esto permite realizar convoluciones mediante multiplicaciones en el dominio de la frecuencia, reduciendo significativamente el costo computacional.
+	
+	\section{Metodología}
+	
+	El procedimiento implementado sigue los pasos:
+	
+	\begin{enumerate}
+		\item Carga de una imagen en escala de grises.
+		\item Redimensionamiento a $512 \times 512$.
+		\item Adición de ruido gaussiano.
+		\item Cálculo de la FFT 2D.
+		\item Aplicación de \texttt{fftshift} para centrar el espectro.
+		\item Construcción de un filtro gaussiano.
+		\item Filtrado en el dominio de frecuencia.
+		\item Aplicación de la transformada inversa.
+		\item Visualización y análisis de resultados.
+	\end{enumerate}
+	
+	\section{Resultados}
+	
+	Se realizaron experimentos variando el parámetro $\sigma$:
+	
+	\begin{itemize}
+		\item $\sigma = 10$: fuerte suavizado, pérdida significativa de detalle.
+		\item $\sigma = 30$: equilibrio adecuado entre ruido y detalle.
+		\item $\sigma = 60$: ligera reducción de ruido.
+		\item $\sigma = 100$: efecto mínimo de filtrado.
+	\end{itemize}
+	
+	Además, se evaluó el rendimiento mediante el Error Cuadrático Medio:
+	
+	\begin{equation}
+		MSE = \frac{1}{MN} \sum (f[m,n] - g[m,n])^2
+	\end{equation}
+	
+	Se observó un comportamiento no monótono, evidenciando un valor óptimo intermedio de $\sigma$.
+	
+	\section{Discusión}
+	
+	Los resultados muestran que el filtrado en el dominio de frecuencias es efectivo para eliminar ruido gaussiano. Sin embargo, la eliminación de altas frecuencias también afecta detalles importantes de la imagen.
+	
+	Esto evidencia un compromiso intrínseco entre:
+	
+	\begin{itemize}
+		\item eliminación de ruido
+		\item preservación de bordes
+	\end{itemize}
+	
+	El uso de un filtro gaussiano, a diferencia de filtros ideales, evita artefactos visuales como el fenómeno de Gibbs.
+	
+	\section{Conclusiones}
+	
+	La Transformada de Fourier proporciona un marco poderoso para el procesamiento de imágenes. El uso de la FFT permite realizar análisis y filtrado de manera eficiente.
+	
+	El filtro gaussiano resulta particularmente adecuado debido a su naturaleza suave, permitiendo reducir ruido sin introducir discontinuidades abruptas.
+	
+	Los resultados confirman que la selección del parámetro $\sigma$ es crítica y depende del nivel de ruido presente en la imagen.
+	
+	\begin{thebibliography}{9}
+		
+		\bibitem{oppenheim}
+		A. V. Oppenheim and R. W. Schafer,
+		\textit{Discrete-Time Signal Processing}, 2009.
+		
+		\bibitem{gonzalez}
+		R. C. Gonzalez and R. E. Woods,
+		\textit{Digital Image Processing}, 2018.
+		
+		\bibitem{cooley}
+		J. W. Cooley and J. Tukey,
+		``FFT Algorithm'', 1965.
+		
+		\bibitem{numpy}
+		NumPy FFT Documentation,
+		https://numpy.org
+		
+	\end{thebibliography}
+	
+\end{document}
