@@ -43,22 +43,19 @@
 \newtheorem{proposicion}{Proposición}
 \newtheorem{observacion}{Observación}
 
-% ── Portada ─────────────────────────────────────────────────
 \title{Procesamiento Digital de Imágenes mediante la\\
        Transformada Rápida de Fourier en 2D:\\
        Filtrado Gaussiano Paso-Bajo, Análisis Espectral\\
        y Evaluación Cuantitativa}
 
 \author{
-  \IEEEauthorblockN{Integrante 1\IEEEauthorrefmark{1},
-                    Integrante 2\IEEEauthorrefmark{1},
-                    Integrante 3\IEEEauthorrefmark{1},
-                    Integrante 4\IEEEauthorrefmark{1},
-                    Integrante 5\IEEEauthorrefmark{1}}
+  \IEEEauthorblockN{Brandon Ascensio\IEEEauthorrefmark{1},
+                    Gabriel Cortez\IEEEauthorrefmark{1},
+                    Mario Umaña\IEEEauthorrefmark{1},
+                    Xavier Morán\IEEEauthorrefmark{1}}
   \IEEEauthorblockA{\IEEEauthorrefmark{1}Departamento de Matemática,
     Facultad de Ingeniería y Arquitectura\\
     Universidad Centroamericana ``José Simeón Cañas''\\
-    Antiguo Cuscatlán, El Salvador\\
     Análisis Numérico --- Ciclo 01-2026\\
     Ing. Daniel Augusto Sosa \quad Instructor: Pablo Vides}
 }
@@ -66,9 +63,8 @@
 \begin{document}
 \maketitle
 
-% ── Abstract ────────────────────────────────────────────────
-\begin{abstract}
-Este trabajo presenta un estudio teórico-experimental exhaustivo de la
+
+Este documento presenta un estudio teórico-experimental de la
 Transformada Discreta de Fourier en dos dimensiones (DFT-2D) y su
 implementación eficiente mediante el algoritmo de Cooley-Tukey (FFT-2D),
 aplicadas al procesamiento digital de imágenes RGB. Se desarrolla un flujo
@@ -87,15 +83,7 @@ comparaciones imagen original / imagen con ruido / imagen filtrada para
 distintos valores de $\sigma$.
 \end{abstract}
 
-\begin{IEEEkeywords}
-DFT 2D, FFT, filtro gaussiano paso-bajo, procesamiento de imágenes,
-ruido gaussiano, MSE, PSNR, Teorema de Convolución, Cooley-Tukey, NumPy.
-\end{IEEEkeywords}
-
-%=============================================================
 \section{Introducción}
-%=============================================================
-
 El procesamiento digital de imágenes es una de las disciplinas de mayor
 impacto tecnológico en la actualidad. Sus aplicaciones abarcan la medicina
 (tomografías, resonancias magnéticas, histología digital), la astronomía
@@ -198,6 +186,20 @@ estos desarrollos.
 \section{Marco Teórico}
 \label{sec:marco}
 %=============================================================
+\subsection{Definición Matemática del Problema}
+El problema fundamental a resolver en esta aplicación consiste en estimar una señal de imagen original desconocida, denotada como $f[m,n]$, a partir de una observación degradada $f_{\text{ruido}}[m,n]$. Se asume un modelo de degradación aditivo donde el ruido interfiere con la señal pura:
+
+\begin{equation}
+  f_{\text{ruido}}[m,n] = f[m,n] + \eta[m,n]
+\end{equation}
+
+donde $\eta[m,n]$ representa el ruido blanco gaussiano aditivo (AWGN). El objetivo matemático es diseñar una transformación en el dominio de la frecuencia, mediante una función de transferencia $H[u,v]$, tal que al aplicarla sobre el espectro de la imagen degradada $F_{\text{ruido}}[u,v]$, se obtenga una estimación $\hat{F}[u,v] = F_{\text{ruido}}[u,v] \cdot H[u,v]$ cuya transformada inversa $\hat{f}[m,n]$ minimice el Error Cuadrático Medio (MSE) respecto a la imagen original $f[m,n]$:
+
+\begin{equation}
+  \min_{H} \mathbb{E}\left[ \left( f[m,n] - \mathcal{F}^{-1}\{F_{\text{ruido}}[u,v] \cdot H[u,v]\} \right)^2 \right]
+\end{equation}
+
+Para efectos prácticos de esta investigación, el problema se restringe a evaluar el rendimiento de la aproximación de $H[u,v]$ utilizando un filtro gaussiano paso-bajo para maximizar la relación señal a ruido (PSNR) mitigando el impacto de $\eta[m,n]$.
 
 \subsection{Representación Discreta de Imágenes Digitales}
 
@@ -942,8 +944,7 @@ optimización el filtrado en tiempo real sería inviable en hardware convenciona
 \item \textbf{El Teorema de Convolución (Teorema~\ref{teo:conv}) unifica
 diseño e implementación de filtros.}
 La multiplicación punto a punto en el dominio frecuencial equivale a una
-convolución espacial, permitiendo diseñar filtros con propiedades precisas
-sin construir explícitamente el kernel espacial.
+convolución espacial, permitiendo diseñar filtros con propiedades precisas.
 
 \item \textbf{El Teorema de Parseval (Teorema~\ref{teo:parseval}) garantiza
 la conservación de energía y cuantifica el impacto del filtrado.}
@@ -968,9 +969,6 @@ balance de color.}
 Aplicar el mismo $H[u,v]$ a los tres canales garantiza atenuación uniforme
 del ruido sin introducir desbalances cromáticos.
 
-\item \textbf{PSNR y SSIM complementan al MSE para una evaluación integral.}
-El MSE penaliza todos los errores por igual; el SSIM incorpora coherencia
-estructural y correlaciona mejor con la percepción humana \cite{wang2004}.
 
 \end{enumerate}
 
@@ -978,24 +976,19 @@ estructural y correlaciona mejor con la percepción humana \cite{wang2004}.
 
 \begin{itemize}
 
-\item \textbf{Isotropía del filtro y ruido estructurado.}
+\item \textbf{Uniformidad del filtro y ruido estructurado.}
 El filtro gaussiano isotrópico es óptimo para ruido uniforme, pero no para
 ruido con estructura direccional (moiré, franjas periódicas), donde se
 requiere un filtro anisotrópico o notch \eqref{eq:filtro_notch}.
 
-\item \textbf{Estacionariedad espacial asumida.}
-La DFT-2D global asume propiedades espectrales uniformes en toda la imagen.
-Esta hipótesis falla en imágenes con zonas de textura muy diferente.
-El filtrado espacialmente adaptativo (STFT-2D o Wavelet) superaría esta
-limitación.
+\item \textbf{Suposición de estacionariedad espacial}
+La Transformada Discreta de Fourier bidimensional (DFT-2D) aplicada a toda la imagen supone que las características de frecuencia son las mismas en todas sus regiones. Sin embargo, esto no ocurre cuando la imagen contiene áreas con texturas o patrones muy diferentes.
 
 \item \textbf{Artefactos de borde por periodicidad implícita.}
-La DFT asume periodicidad de la señal, produciendo \textit{spectral leakage}
-cuando los bordes de la imagen no son continuos. Una función de ventana
-bidimensional o extensión simétrica mitiga este efecto.
+La DFT supone que la imagen se repite indefinidamente. Si los bordes de la imagen son muy diferentes entre sí, pueden aparecer errores o distorsiones en el análisis de frecuencias. Para disminuir este efecto, se pueden usar ventanas bidimensionales o extender la imagen de forma simétrica antes del procesamiento.
 
 \item \textbf{Distorsión por saturación de píxeles.}
-La operación $\text{clip}(\cdot, 0, 255)$ post-IFFT introduce distorsión
+La operación $\text{clip}(0, 255)$ post-IFFT introduce distorsión
 no lineal en píxeles que exceden el rango válido, especialmente notable
 con ruido de alta intensidad ($\sigma_\eta = 100$).
 
@@ -1004,10 +997,6 @@ El valor óptimo se determina empíricamente. Métodos adaptativos como el
 filtro de Wiener seleccionan $\sigma$ de forma automática a partir de
 estadísticas estimadas de señal y ruido, sin intervención manual.
 
-\item \textbf{Ausencia de imagen de referencia en modo b.}
-Sin imagen limpia disponible, las métricas absolutas (MSE, PSNR) no pueden
-calcularse. El SSIM entre versiones con distintos $\sigma$ es una
-alternativa más informativa \cite{wang2004}.
 
 \end{itemize}
 
